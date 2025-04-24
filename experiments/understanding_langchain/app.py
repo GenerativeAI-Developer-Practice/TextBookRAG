@@ -15,7 +15,7 @@ if st.sidebar.button("Load Pdf from Directory"):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     embeddings = VertexAIEmbeddings()
-    vectordb = Chroma.from_documents(splits, embeddings, persist_directory="./chroma_db")
+    vectordb = Chroma.from_documents(splits, embeddings, persist_directory="./streamlit_db")
     st.session_state["vectordb"] = vectordb
 
 query = st.text_input("Enter your query")
