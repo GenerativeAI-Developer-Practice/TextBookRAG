@@ -39,6 +39,6 @@ def parse_pdf_page_by_page(pdf_path, output_dir="output"):
         print(f"An error occurred: {e}")
 
 
-pdf_file_path = "data/jesc109.pdf" # Replace with your PDF File path.
+pdf_file_path = "data/gesc107.pdf" # Replace with your PDF File path.
 
 parse_pdf_page_by_page(pdf_file_path, "extracted_content") # You need to create the extracted_content folder.
