@@ -9,24 +9,31 @@ import os
 
 st.title("Text Book RAG")
 
-if st.sidebar.button("Load Pdf from Directory"):
-    loader = DirectoryLoader("./data/sixth/science", glob="*.pdf", loader_cls=PyPDFLoader)
-    docs = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    splits = text_splitter.split_documents(docs)
-    embeddings = VertexAIEmbeddings()
-    vectordb = Chroma.from_documents(splits, embeddings, persist_directory="./streamlit_db")
-    st.session_state["vectordb"] = vectordb
+def load_vector_store(persist_path="./chroma_db"):
+    embedding_model = "text-embedding-005"
+    embeddings = VertexAIEmbeddings(model_name=embedding_model)
+    vector_store = Chroma(persist_directory=persist_path, embedding_function=embeddings)
+    return vector_store
+
+# if st.sidebar.button("Load Pdf from Directory"):
+#     loader = DirectoryLoader("./data/sixth/science", glob="*.pdf", loader_cls=PyPDFLoader)
+#     docs = loader.load()
+#     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+#     splits = text_splitter.split_documents(docs)
+#     embeddings = VertexAIEmbeddings()
+#     vectordb = Chroma.from_documents(splits, embeddings, persist_directory="./streamlit_db")
+#     st.session_state["vectordb"] = vectordb
 
 query = st.text_input("Enter your query")
 if query:
-    vectordb = st.session_state["vectordb"]
+    vectordb = load_vector_store()
     retriever = vectordb.as_retriever()
-    llm = ChatVertexAI(model_name="gemini-pro")
+    llm = ChatVertexAI(model_name="gemini-2.0-flash-lite-001")
     prompt = PromptTemplate(
         input_variables=["context", "question"],
         template="""
-        You are a helpful assistant. Given the following context, answer the question.
+        You are a helpful teacher. Given the following Content from textbook as text, 
+        answer the question in detail.
 
         Context:
         {context}
@@ -34,15 +41,15 @@ if query:
         Question:
         {question}
 
+        Ensure if the answer is not found in context, Reply I dont know th answer.
+
         Answer:"""
     )
-    chain = LLMChain(llm=llm, prompt=prompt)
-    relevant_docs = retriever.get_relevant_documents(query)
+    chain = prompt | llm 
+    relevant_docs = retriever.invoke(query)
     context = "\n".join([doc.page_content for doc in relevant_docs])
-    answer = chain.run({"context": context, "question": query})
-    #st.write(answer)
-    # Output
+    answer = chain.invoke({"context": context, "question": query})
     st.subheader("Generated Answer:")
-    st.write(answer)
+    st.write(answer.content)
 
 
